@@ -208,6 +208,11 @@ li:hover {
 	color: inherit;
 }
 
+.login .error-msg {
+	margin-top: 0.75em;
+	color: red;
+}
+
 
 #contact {
 	width: 50%;
