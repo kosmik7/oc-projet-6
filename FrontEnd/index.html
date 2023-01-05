@@ -12,12 +12,13 @@
 	<link rel="stylesheet" href="./assets/style.css">
 	<script defer src="https://kit.fontawesome.com/893af690be.js" crossorigin="anonymous"></script>
 	<script defer type="text/javascript" src="./assets/js/portfolio.js"></script>
+	<script defer type="text/javascript" src="./assets/js/modal.js"></script>
 </head>
 
 <body>
 
 	<header>
-		<div class="admin-element wrapper-spacer hidden">
+		<div class="admin-ui wrapper-spacer hidden">
 			<div class="admin-header">
 				<div class="admin-edit">
 					<i class="fa-regular fa-pen-to-square"></i>
@@ -57,7 +58,7 @@
 		<section id="portfolio">
 			<div class="portfolio__header">
 				<h2>Mes Projets</h2>
-				<a href="#" class="admin-element hidden">
+				<a href="#modal-wrapper" class="admin-ui js-modal hidden" data-modal="portfolio">
 					<div class="admin-edit">
 						<i class="fa-regular fa-pen-to-square"></i>
 						<p>Modifier</p>
@@ -79,6 +80,20 @@
 			</form>
 		</section>
 	</main>
+
+	<aside id="modal-wrapper" style="display: none;" aria-hidden="true">
+		<div class="modal">
+			<div class="modal__controls">
+				<button class="js-modal-btn js-modal-btn--close">
+					<i class="fa-solid fa-xmark modal-close-btn"></i>
+				</button>
+				<button class="js-modal-btn js-modal-btn--close">
+					<i class="fa-solid fa-arrow-left"></i>
+				</button>
+			</div>
+			<form id="modal__form"></form>
+		</div>
+	</aside>
 
 	<footer>
 		<nav>
