@@ -356,7 +356,8 @@ li:hover {
 	box-shadow: 0px 4px 14px rgba(0, 0, 0, 0.09);
 }
 
-input[type="submit"] {
+input[type="submit"],
+.btn-submit {
 	font-family: 'Syne';
 	font-weight: 700;
 	color: white;
@@ -484,9 +485,9 @@ footer nav ul {
 	margin-top: 45px;
 }
 
-#modal__form .btn {
+#modal__form .btn-submit {
 	width: auto;
-	margin: 35px auto 1em;
+	margin: 30px auto 20px;
 	padding: 0.8125em 3em;
 	border: none;
 }
@@ -552,4 +553,12 @@ footer nav ul {
 
 .modal-gallery figure:hover .btn-move {
 	opacity: 1;
+}
+
+.modal-gallery .btn-move:hover {
+	background: #1D6154;
+}
+
+.modal-gallery .btn-delete:hover {
+	background: red;
 }

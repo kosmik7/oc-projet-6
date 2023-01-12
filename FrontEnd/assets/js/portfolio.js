@@ -6,7 +6,6 @@ async function fetchProjets() {
     try {
         const response = await fetch("http://localhost:5678/api/works");
 
-        // si code = 200
         if (!response.ok) {
             throw new Error(`Erreur HTTP: ${response.status}`);
         }
@@ -34,6 +33,7 @@ async function createGallery() {
         let figure = document.createElement("figure");
         figure.setAttribute("class", "gallery-item");
         figure.setAttribute("data-category", element.category.name);
+        figure.setAttribute("data-id", element.id);
 
         let img = document.createElement("img")
         img.setAttribute("crossorigin", "anonymous"); // permet de passer outre l'erreur 'cross-origin-resource-policy: same-origin'
