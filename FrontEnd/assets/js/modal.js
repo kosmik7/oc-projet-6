@@ -12,7 +12,7 @@ function adminInterface() {
 function listenModal() {
     document.querySelectorAll(".js-modal").forEach(a => {
         a.addEventListener("click", (e) => {
-            createModal(e.target.closest("a").dataset.modal)
+            targetModal(e.target.closest("a").dataset.modal)
             openModal(e)
         })
     })
@@ -49,25 +49,44 @@ function closeModal(e) {
     modal = null
 };
 
-async function createModal(target) {
+function targetModal(target) {
+    switch (target) {
+        case "portfolio":
+            createModal(contentPortfolioA())
+            break;
+        case "portfolio-add":
+            createModal(contentPortfolioB())
+            break;
+    }
+}
+
+async function createModal(content) {
     const fragment = document.createDocumentFragment();
     const modalElement = document.getElementById("modal__form");
 
     // Construction
-    const modalContent = document.createElement("div");
+    const modalContent = document.createElement("form");
     modalContent.setAttribute("id", modalElement.getAttribute("id"));
+    modalContent.onsubmit = () => { return false } // désactive le comportement 'submit' par défaut
     fragment.appendChild(modalContent)
-
-    console.log(target)
-    switch (target) {
-        case "portfolio":
-            modalContent.appendChild(await contentPortfolioA())
-            break;
-    }
+    modalContent.appendChild(await content)
 
     // insert Node
     modalElement.replaceWith(fragment)
 };
+
+async function fetchCategories() {
+    try {
+        const response = await fetch("http://localhost:5678/api/categories");
+        if (!response.ok) {
+            throw new Error(`Erreur HTTP: ${response.status}`);
+        }
+        return await response.json();
+    }
+    catch (error) {
+        console.error(`Impossible d'obtenir les catégories: ${error}`);
+    }
+}
 
 async function deleteWorks(id) {
     try {
@@ -86,6 +105,26 @@ async function deleteWorks(id) {
     }
     catch (error) {
         console.error(`Impossible de supprimer le projet /works/{id}=${id}: ${error}`);
+    }
+};
+
+async function sendWorks(formData) {
+    try {
+        const response = await fetch(`http://localhost:5678/api/works`, {
+            method: "POST",
+            headers: {
+                "accept": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            body: formData
+        })
+        if (!response.ok) {
+            throw new Error(`Erreur HTTP: ${response.status}`);
+        }
+        console.log(`Le projet a été ajouté à la base de donnée avec succès`)
+    }
+    catch (error) {
+        console.error(`Impossible d'ajouter le projet: ${error}`);
     }
 };
 
@@ -149,8 +188,12 @@ const contentPortfolioA = async () => {
 
     const submitBtn = document.createElement("input");
     submitBtn.setAttribute("class", "btn-submit");
+    submitBtn.setAttribute("data-modal", "portfolio-add"); // target modale
     submitBtn.setAttribute("type", "button");
     submitBtn.setAttribute("value", "Ajouter une photo");
+    submitBtn.addEventListener("click", (e) => {
+        targetModal(e.target.dataset.modal)
+    });
     fragment.appendChild(submitBtn)
 
     const deleteAll = document.createElement("a");
@@ -158,6 +201,114 @@ const contentPortfolioA = async () => {
     deleteAll.textContent = "Supprimer la galerie";
     deleteAll.style.color = "red";
     fragment.appendChild(deleteAll)
+
+    return fragment
+}
+
+const contentPortfolioB = async () => {
+    const fragment = document.createDocumentFragment();
+    const projets = await fetchProjets();
+
+    const h3 = document.createElement("h3");
+    h3.textContent = "Ajout photo";
+    fragment.appendChild(h3)
+
+    const uploadContainer = document.createElement('div')
+    uploadContainer.setAttribute("class", "upload-container");
+    fragment.appendChild(uploadContainer)
+
+    const uploadIcon = document.createElement('img')
+    uploadIcon.setAttribute("class", "icon")
+    uploadIcon.setAttribute("src", "./assets/icons/img.svg")
+    uploadContainer.appendChild(uploadIcon)
+
+    const uploadBtn = document.createElement('div')
+    uploadContainer.appendChild(uploadBtn)
+
+    const uploadLabel = document.createElement('label')
+    uploadLabel.setAttribute("for", "image")
+    uploadLabel.setAttribute("class", "btn")
+    uploadLabel.textContent = "+ Ajouter photo"
+    uploadBtn.appendChild(uploadLabel)
+
+    const uploadInput = document.createElement('input')
+    uploadInput.setAttribute("id", "image")
+    uploadInput.setAttribute('name', 'image')
+    uploadInput.setAttribute("type", "file")
+    uploadInput.setAttribute("accept", "image/png, image/jpeg, image/webp")
+    uploadInput.style.display = 'none'
+    uploadBtn.appendChild(uploadInput)
+
+    const uploadInfo = document.createElement('p')
+    uploadInfo.textContent = "jpg, png : 4mo max"
+    uploadContainer.appendChild(uploadInfo)
+
+    const uploadImg = document.createElement('img')
+    uploadImg.setAttribute("class", "img-preview")
+    uploadImg.setAttribute("src", "")
+    uploadContainer.appendChild(uploadImg)
+
+    uploadInput.onchange = () => {
+        const [file] = uploadInput.files
+        if (file) {
+            uploadImg.src = URL.createObjectURL(file)
+            uploadIcon.style.opacity = 0
+            uploadBtn.style.opacity = 0
+            uploadInfo.style.opacity = 0
+        }
+    }
+
+    const inputContainer = document.createElement('div')
+    inputContainer.setAttribute("class", "input-container")
+    fragment.appendChild(inputContainer)
+
+    const titleContainer = document.createElement('div')
+    inputContainer.appendChild(titleContainer)
+
+    const labelTitle = document.createElement('label')
+    labelTitle.setAttribute('for', 'title')
+    labelTitle.textContent = "Titre"
+    titleContainer.appendChild(labelTitle)
+
+    const inputTitle = document.createElement('input')
+    inputTitle.setAttribute('type', 'text')
+    inputTitle.setAttribute('name', 'title')
+    inputTitle.setAttribute('required', '')
+    titleContainer.appendChild(inputTitle)
+
+    const categoryContainer = document.createElement('div')
+    inputContainer.appendChild(categoryContainer)
+
+    const labelCategory = document.createElement('label')
+    labelCategory.setAttribute('for', 'titre')
+    labelCategory.textContent = "Catégorie"
+    categoryContainer.appendChild(labelCategory)
+
+    const selectCategory = document.createElement('select')
+    selectCategory.setAttribute('name', 'category')
+    selectCategory.setAttribute('required', '')
+    categoryContainer.appendChild(selectCategory)
+
+    for (let categorie of await fetchCategories()) {
+        const optionCategory = document.createElement('option')
+        optionCategory.setAttribute('value', categorie.id)
+        optionCategory.textContent = categorie.name
+        selectCategory.appendChild(optionCategory)
+    }
+
+    const separator = document.createElement("hr");
+    fragment.appendChild(separator)
+
+    const submitBtn = document.createElement("input");
+    submitBtn.setAttribute("class", "btn-submit");
+    submitBtn.setAttribute("type", "submit");
+    submitBtn.setAttribute("value", "Valider");
+    submitBtn.onclick = () => {
+        const formData = new FormData(document.querySelector("#modal__form"));
+        sendWorks(formData)
+    }
+
+    fragment.appendChild(submitBtn)
 
     return fragment
 }

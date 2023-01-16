@@ -5,14 +5,11 @@ events();
 async function fetchProjets() {
     try {
         const response = await fetch("http://localhost:5678/api/works");
-
         if (!response.ok) {
             throw new Error(`Erreur HTTP: ${response.status}`);
         }
-        const data = await response.json();
-        return data;
+        return await response.json();
     }
-
     catch (error) {
         console.error(`Impossible d'obtenir les projets: ${error}`);
     }
