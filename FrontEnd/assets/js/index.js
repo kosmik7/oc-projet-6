@@ -1,7 +1,217 @@
+/**
+ * 
+ * Fonctions servant à communiquer avec l'API du backend.
+ * Utilisation de la méthode 'fetch()', de 'async/await' (promises) et de 'try/catch' pour gérer les erreurs.
+ * 
+ */
+
+apiUrl = "http://localhost:5678/api"
+
+async function apiGetWorks() {
+    try {
+        const response = await fetch(`${apiUrl}/works`);
+        if (!response.ok) {
+            throw new Error(`Erreur HTTP: ${response.status}`);
+        }
+        return await response.json();
+    }
+    catch (error) {
+        console.error(`Impossible d'obtenir les projets: ${error}`);
+    }
+}
+
+async function apiGetCategories() {
+    try {
+        const response = await fetch(`${apiUrl}/categories`);
+        if (!response.ok) {
+            throw new Error(`Erreur HTTP: ${response.status}`);
+        }
+        return await response.json();
+    }
+    catch (error) {
+        console.error(`Impossible d'obtenir les catégories: ${error}`);
+    }
+}
+
+async function apiDeleteWorks(id) {
+    try {
+        const response = await fetch(`${apiUrl}/works/${id}`, {
+            method: "DELETE",
+            headers: {
+                "accept": "*/*",
+                "Authorization": `Bearer ${token}`
+            }
+        })
+        if (!response.ok) {
+            throw new Error(`Erreur HTTP: ${response.status}`);
+        }
+        console.log(`Le projet /works/{id}=${id} a été supprimé de la base de donnée avec succès`)
+        document.querySelectorAll(`[data-id="${id}"]`).forEach(element => element.remove())
+    }
+    catch (error) {
+        console.error(`Impossible de supprimer le projet /works/{id}=${id}: ${error}`);
+    }
+};
+
+async function apiPostWorks(formData) {
+    try {
+        const response = await fetch(`${apiUrl}/works`, {
+            method: "POST",
+            headers: {
+                "accept": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            body: formData
+        })
+        if (!response.ok) {
+            throw new Error(`Erreur HTTP: ${response.status}`);
+        }
+        console.log(`Le projet a été ajouté à la base de donnée avec succès`)
+        return true
+    }
+    catch (error) {
+        console.error(`Impossible d'ajouter le projet: ${error}`);
+    }
+};
+
+/**
+ * Code du Portfolio.
+ * 
+ */
+
+// execution
+events();
+
+// créer la galerie du portfolio
+async function createGallery() {
+    const projets = await apiGetWorks();
+
+    // composer les noeuds DOM
+    let container = document.createElement("div");
+    container.setAttribute("class", "gallery");
+
+    let fragment = document.createDocumentFragment();
+    fragment.appendChild(container)
+
+    for (let element of projets) {
+        let figure = document.createElement("figure");
+        figure.setAttribute("class", "gallery-item");
+        figure.setAttribute("data-category", element.category.name);
+        figure.setAttribute("data-id", element.id);
+
+        let img = document.createElement("img")
+        img.setAttribute("crossorigin", "anonymous"); // permet de passer outre l'erreur 'cross-origin-resource-policy: same-origin'
+        img.setAttribute("src", element.imageUrl);
+        img.getAttribute("alt", element.title);
+
+        let figcaption = document.createElement("figcaption");
+        figcaption.textContent = element.title;
+
+        // ajout au container
+        figure.appendChild(img)
+        figure.appendChild(figcaption)
+        container.appendChild(figure)
+    }
+    return fragment
+}
+
+// créer les boutons/filtres du portfolio
+async function createFilters() {
+    const projets = await apiGetWorks();
+
+    // récupere les catégories dans un Set
+    const categories = new Set();
+    categories.add("Tous");
+
+    for (let element of projets) {
+        categories.add(element.category.name);
+    }
+
+    // composer les noeuds DOM
+    let container = document.createElement("div");
+    container.setAttribute("class", "filters");
+
+    let fragment = document.createDocumentFragment();
+    fragment.appendChild(container)
+
+    for (let element of categories) {
+        let button = document.createElement("button");
+        button.setAttribute("type", "button");
+        button.setAttribute("class", "filters-item");
+        button.setAttribute("data-category", element);
+
+        button.textContent = element;
+
+        // ajout au container
+        container.appendChild(button)
+    }
+    return fragment
+}
+
+// Ajouts des fragments au DOM
+async function composeDom() {
+    const containerPortfolio = document.getElementById("portfolio");
+
+    let fragment = document.createDocumentFragment();
+    fragment.appendChild(await createFilters())
+    fragment.appendChild(await createGallery())
+
+    // ajout du fragment au DOM
+    containerPortfolio.appendChild(fragment);
+}
+
+// Ajout des event listeners sur les filtres
+async function events() {
+    await composeDom();
+
+    const galleryFilters = document.querySelector(".filters");
+    const galleryItems = document.getElementsByClassName("gallery-item");
+
+    // ajoute la classe active au premier filtre 'Tous'
+    galleryFilters.querySelector(".filters-item").classList.add("active");
+
+    galleryFilters.addEventListener("click", function (selectedItem) {
+        // vérifie qu'un bouton valide a été clické
+        if (!selectedItem.target.classList.contains("filters-item")) {
+            return
+        }
+
+        // déplace la classe .active sur l'élémént clické
+        galleryFilters.querySelector(".active").classList.remove("active");
+        selectedItem.target.classList.add("active");
+
+        // filtre l'affichage en fonction des catégories assignées
+        let category = selectedItem.target.getAttribute("data-category");
+        for (let figure of galleryItems) {
+            let filter = figure.getAttribute("data-category");
+            switch (true) {
+                case category == "Tous":
+                    figure.style.display = "block";
+                    break;
+                case filter == category:
+                    figure.style.display = "block";
+                    break;
+                default:
+                    figure.style.display = "none";
+            }
+        }
+    });
+}
+
+/**
+ * Code de la fenêtre modale.
+ * 
+ */
+
 let modal = null
 
 const token = localStorage.getItem("token")
-if (token != null) adminInterface()
+if (token != null) IsLoggedIn()
+
+function IsLoggedIn() {
+    adminInterface()
+    document.querySelector('.nav-login').textContent = 'Logout'
+};
 
 function adminInterface() {
     const elements = Array.from(document.getElementsByClassName("admin-ui")); // array.from pour la boucle foreach
@@ -75,63 +285,13 @@ async function createModal(content) {
     modalElement.replaceWith(fragment)
 };
 
-async function fetchCategories() {
-    try {
-        const response = await fetch("http://localhost:5678/api/categories");
-        if (!response.ok) {
-            throw new Error(`Erreur HTTP: ${response.status}`);
-        }
-        return await response.json();
-    }
-    catch (error) {
-        console.error(`Impossible d'obtenir les catégories: ${error}`);
-    }
-}
-
-async function deleteWorks(id) {
-    try {
-        const response = await fetch(`http://localhost:5678/api/works/${id}`, {
-            method: "DELETE",
-            headers: {
-                "accept": "*/*",
-                "Authorization": `Bearer ${token}`
-            }
-        })
-        if (!response.ok) {
-            throw new Error(`Erreur HTTP: ${response.status}`);
-        }
-        console.log(`Le projet /works/{id}=${id} a été supprimé de la base de donnée avec succès`)
-        document.querySelectorAll(`[data-id="${id}"]`).forEach(element => element.remove())
-    }
-    catch (error) {
-        console.error(`Impossible de supprimer le projet /works/{id}=${id}: ${error}`);
-    }
-};
-
-async function sendWorks(formData) {
-    try {
-        const response = await fetch(`http://localhost:5678/api/works`, {
-            method: "POST",
-            headers: {
-                "accept": "application/json",
-                "Authorization": `Bearer ${token}`
-            },
-            body: formData
-        })
-        if (!response.ok) {
-            throw new Error(`Erreur HTTP: ${response.status}`);
-        }
-        console.log(`Le projet a été ajouté à la base de donnée avec succès`)
-    }
-    catch (error) {
-        console.error(`Impossible d'ajouter le projet: ${error}`);
-    }
-};
-
 // différents contenus possibles de la fenetre modale
 const contentPortfolioA = async () => {
     const fragment = document.createDocumentFragment();
-    const projets = await fetchProjets();
+    const projets = await apiGetWorks();
+
+    const backBtn = document.querySelector('.js-modal-btn--back')
+    backBtn.style.display = 'none'
 
     const h3 = document.createElement("h3");
     h3.textContent = "Galerie Photo";
@@ -170,7 +330,7 @@ const contentPortfolioA = async () => {
         buttonTrash.setAttribute("type", "submit");
         buttonTrash.addEventListener("click", (e) => {
             const id = e.target.closest('figure').dataset.id;
-            deleteWorks(id);
+            apiDeleteWorks(id);
         });
 
         const iconTrash = document.createElement("i");
@@ -207,7 +367,12 @@ const contentPortfolioA = async () => {
 
 const contentPortfolioB = async () => {
     const fragment = document.createDocumentFragment();
-    const projets = await fetchProjets();
+
+    const backBtn = document.querySelector('.js-modal-btn--back')
+    backBtn.style.display = null
+    backBtn.addEventListener("click", (e) => {
+        targetModal('portfolio')
+    });
 
     const h3 = document.createElement("h3");
     h3.textContent = "Ajout photo";
@@ -219,7 +384,7 @@ const contentPortfolioB = async () => {
 
     const uploadIcon = document.createElement('img')
     uploadIcon.setAttribute("class", "icon")
-    uploadIcon.setAttribute("src", "./assets/icons/img.svg")
+    uploadIcon.setAttribute("src", "./assets/icons/ico-img.svg")
     uploadContainer.appendChild(uploadIcon)
 
     const uploadBtn = document.createElement('div')
@@ -289,7 +454,7 @@ const contentPortfolioB = async () => {
     selectCategory.setAttribute('required', '')
     categoryContainer.appendChild(selectCategory)
 
-    for (let categorie of await fetchCategories()) {
+    for (let categorie of await apiGetCategories()) {
         const optionCategory = document.createElement('option')
         optionCategory.setAttribute('value', categorie.id)
         optionCategory.textContent = categorie.name
@@ -303,11 +468,25 @@ const contentPortfolioB = async () => {
     submitBtn.setAttribute("class", "btn-submit");
     submitBtn.setAttribute("type", "submit");
     submitBtn.setAttribute("value", "Valider");
-    submitBtn.onclick = () => {
+    submitBtn.onclick = async () => {
         const formData = new FormData(document.querySelector("#modal__form"));
-        sendWorks(formData)
-    }
+        if (!await apiPostWorks(formData)) {
+            return
+        }
+        targetModal('portfolio')
 
+        // refresh de la galerie        
+        let fragment = document.createDocumentFragment();
+        fragment.appendChild(await createGallery())
+
+        const gallery = document.querySelector('.gallery')
+        gallery.replaceWith(fragment);
+
+        // retourne sur le filtre 'Tous' pour éviter toute confusion lors du refresh de la galerie
+        const galleryFilters = document.querySelector(".filters");
+        galleryFilters.querySelector(".active").classList.remove("active");
+        galleryFilters.querySelector('[data-category="Tous"]').classList.add("active");
+    }
     fragment.appendChild(submitBtn)
 
     return fragment

@@ -1,3 +1,5 @@
+apiUrl = 'http://localhost:5678/api'
+
 const form = document.getElementById('form');
 form.addEventListener("submit", submitForm);
 
@@ -9,7 +11,7 @@ async function submitForm(event) {
     const formDataAsJSON = JSON.stringify(formDataAsObject);
 
     try {
-        const response = await fetch("http://localhost:5678/api/users/login", {
+        const response = await fetch(`${apiUrl}/users/login`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
