@@ -1,3 +1,11 @@
+/**
+ * 
+ * Code pour la page de connexion.
+ * 2.1 Intégration du design de la page de formulaire
+ * 2.2 Authentification de l’utilisateur
+ * 
+ */
+
 apiUrl = 'http://localhost:5678/api'
 
 const form = document.getElementById('form');
@@ -43,6 +51,7 @@ async function submitForm(event) {
 };
 
 
+// traitement des erreurs
 function errorMessage(type) {
     let inputElement
     let errorText

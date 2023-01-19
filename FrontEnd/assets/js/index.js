@@ -45,7 +45,7 @@ async function apiDeleteWorks(id) {
         if (!response.ok) {
             throw new Error(`Erreur HTTP: ${response.status}`);
         }
-        console.log(`Le projet /works/{id}=${id} a été supprimé de la base de donnée avec succès`)
+        console.log(`Le projet ${id} a été supprimé de la base de donnée avec succès`)
         document.querySelectorAll(`[data-id="${id}"]`).forEach(element => element.remove())
     }
     catch (error) {
@@ -75,17 +75,17 @@ async function apiPostWorks(formData) {
 };
 
 /**
- * Code du Portfolio.
  * 
+ * Code du Portfolio.
+ * 1.1 Récupération des travaux depuis le back-end
+ * 1.2 Réalisation du filtre des travaux
+ *
  */
 
-// execution
-events();
+composeDom()
 
 // créer la galerie du portfolio
-async function createGallery() {
-    const projets = await apiGetWorks();
-
+async function createGallery(projets) {
     // composer les noeuds DOM
     let container = document.createElement("div");
     container.setAttribute("class", "gallery");
@@ -116,10 +116,8 @@ async function createGallery() {
 }
 
 // créer les boutons/filtres du portfolio
-async function createFilters() {
-    const projets = await apiGetWorks();
-
-    // récupere les catégories dans un Set
+async function createFilters(projets) {
+    // récupere les catégories dans un Set, depuis GET/works pour éviter les catégories vides
     const categories = new Set();
     categories.add("Tous");
 
@@ -139,7 +137,6 @@ async function createFilters() {
         button.setAttribute("type", "button");
         button.setAttribute("class", "filters-item");
         button.setAttribute("data-category", element);
-
         button.textContent = element;
 
         // ajout au container
@@ -151,19 +148,21 @@ async function createFilters() {
 // Ajouts des fragments au DOM
 async function composeDom() {
     const containerPortfolio = document.getElementById("portfolio");
+    const projets = await apiGetWorks();
 
     let fragment = document.createDocumentFragment();
-    fragment.appendChild(await createFilters())
-    fragment.appendChild(await createGallery())
+    fragment.appendChild(await createFilters(projets))
+    fragment.appendChild(await createGallery(projets))
 
     // ajout du fragment au DOM
     containerPortfolio.appendChild(fragment);
+
+    // EventListeners
+    events()
 }
 
 // Ajout des event listeners sur les filtres
 async function events() {
-    await composeDom();
-
     const galleryFilters = document.querySelector(".filters");
     const galleryItems = document.getElementsByClassName("gallery-item");
 
@@ -199,18 +198,33 @@ async function events() {
 }
 
 /**
+ * 
  * Code de la fenêtre modale.
+ * 3.1 Ajout de la fenêtre modale
+ * 3.2 Suppression de travaux existants
+ * 3.3 Envoi d’un nouveau projet au back-end via le formulaire de la modale
+ * 3.4 Traitement de la réponse de l’API pour afficher dynamiquement la nouvelle image de la modale.
  * 
  */
 
 let modal = null
 
+// vérifie la présence d'un token
+// (valider le token en envoyant un projet vide et en récupérant le code erreur? mauvaise pratique?)
 const token = localStorage.getItem("token")
 if (token != null) IsLoggedIn()
 
 function IsLoggedIn() {
     adminInterface()
-    document.querySelector('.nav-login').textContent = 'Logout'
+
+    // logout bouton dans le header / nav
+    const navLogin = document.querySelector('.nav-login')
+    navLogin.textContent = 'Logout'
+    navLogin.addEventListener('click', (e) => {
+        e.preventDefault()
+        localStorage.removeItem("token")
+        window.location.reload()
+    })
 };
 
 function adminInterface() {
@@ -475,9 +489,10 @@ const contentPortfolioB = async () => {
         }
         targetModal('portfolio')
 
-        // refresh de la galerie        
+        // refresh de la galerie      
+        const projets = await apiGetWorks();
         let fragment = document.createDocumentFragment();
-        fragment.appendChild(await createGallery())
+        fragment.appendChild(await createGallery(projets))
 
         const gallery = document.querySelector('.gallery')
         gallery.replaceWith(fragment);
